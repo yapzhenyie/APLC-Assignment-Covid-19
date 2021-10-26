@@ -15,11 +15,26 @@ import java.util.Date;
  */
 public class DateTimeHelper {
     
-    public static final SimpleDateFormat weekYearFormat = new SimpleDateFormat("'Week:'w',Year:'Y");
-    public static final SimpleDateFormat monthYearFormat = new SimpleDateFormat("'Month:'M',Year:'Y");
+    public static final SimpleDateFormat weekYearFormat = new SimpleDateFormat("'Week:'ww',Year:'Y");
+    public static final SimpleDateFormat monthYearFormat = new SimpleDateFormat("'Month:'MM',Year:'yyyy");
 
     public static Date parseDate(String date) throws ParseException {
         SimpleDateFormat formatter = new SimpleDateFormat("MM/dd/yy");
         return formatter.parse(date);
+    }
+    
+    public static String convertDateAsString(Date date) {
+        SimpleDateFormat formatter = new SimpleDateFormat("dd MMM yyyy '('EEE')'");
+        return formatter.format(date);
+    }
+    
+    public static String convertDateToShortFormat(Date date) {
+        SimpleDateFormat formatter = new SimpleDateFormat("dd MMM yyyy");
+        return formatter.format(date);
+    }
+    
+    public static String convertDateToMonthFormat(String monthYear) throws ParseException {
+        SimpleDateFormat formatter = new SimpleDateFormat("MMM yyyy");
+        return formatter.format(monthYearFormat.parse(monthYear));
     }
 }

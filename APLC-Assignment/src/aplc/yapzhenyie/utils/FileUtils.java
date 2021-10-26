@@ -13,11 +13,10 @@ import com.opencsv.exceptions.CsvValidationException;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
 
 /**
  *
@@ -113,8 +112,9 @@ public class FileUtils {
     public static List<Country> readCSVFileFromUrl(String urlPath) {
         List<Country> countries = new ArrayList<>();
         try {
-            URL stockURL = new URL(urlPath);
-            InputStreamReader inputStream = new InputStreamReader(stockURL.openStream(), StandardCharsets.UTF_8);
+            URL url = new URL(urlPath);
+            URLConnection urlConnec = url.openConnection();
+            InputStreamReader inputStream = new InputStreamReader(urlConnec.getInputStream(), StandardCharsets.UTF_8);
             CSVReader reader = new CSVReader(inputStream);
 
             String[] rows;
