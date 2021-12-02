@@ -6,23 +6,15 @@
 package aplc.yapzhenyie;
 
 import aplc.yapzhenyie.data.Country;
-import aplc.yapzhenyie.data.DataElement;
+import aplc.yapzhenyie.prolog.PrologKnowledgebaseGenerator;
 import aplc.yapzhenyie.screens.PageDashboard;
+import aplc.yapzhenyie.screens.PageProlog;
 import aplc.yapzhenyie.screens.PageStatistic;
-import aplc.yapzhenyie.utils.DateTimeHelper;
 import aplc.yapzhenyie.utils.DialogUtils;
 import aplc.yapzhenyie.utils.FileUtils;
 import aplc.yapzhenyie.utils.LoggerManager;
-import aplc.yapzhenyie.utils.StatisticReportUtils;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import javax.swing.SwingUtilities;
 
 /**
  *
@@ -32,6 +24,7 @@ public class APLCAssignment {
 
     private static PageDashboard dashboardPage;
     private static PageStatistic statisticPage;
+    private static PageProlog prologPage;
 
     private static List<Country> confirmedCasesDataset = new ArrayList<>();
     private static List<Country> deathCasesDataset = new ArrayList<>();
@@ -49,60 +42,24 @@ public class APLCAssignment {
      */
     public static void main(String[] args) {
         initProgram();
-        String target = "Malaysia";
-
-        Country result = confirmedCasesDataset.stream().filter(p -> p.getCountryName().equals(target)).findAny().orElse(null);
-        if (result != null) {
-            List<DataElement> resu = result.getDataset();
-
-            List<String> listOfWeeks = new ArrayList<>();
-            for (String date : StatisticReportUtils.getFormattedWeeklyDate(confirmedCasesDataset)) {
-                //System.out.println("Range: " + StatisticReportUtils.getFormattedWeeklyStartDate(confirmedCasesDataset, date) + " - " + StatisticReportUtils.getFormattedWeeklyEndDate(confirmedCasesDataset, date));
-                //listOfWeeks.add(date);
-                //System.out.println(date);
-            }
-            for (String date : StatisticReportUtils.getFormattedMonthlyDate(confirmedCasesDataset)) {
-                listOfWeeks.add(date);
-                //System.out.println(date);
-            }
-
-            List<DataElement> t = resu.stream()
-                    .filter(map -> DateTimeHelper.monthYearFormat.format(map.getDate()).equals(listOfWeeks.get(listOfWeeks.size() - 2)))
-                    .collect(Collectors.toList());
-            System.out.println(t.size());
-            System.out.println(StatisticReportUtils.getWeeklyConfirmedCasesByCountry(confirmedCasesDataset, target, listOfWeeks.get(listOfWeeks.size() - 2)));
-            System.out.println(StatisticReportUtils.getMonthlyConfirmedCasesByCountry(confirmedCasesDataset, target, listOfWeeks.get(listOfWeeks.size() - 1)));
-            Integer lowestDeath = StatisticReportUtils.getLowestDataByCountry(deathCasesDataset, target);
-            Integer highestDeath = StatisticReportUtils.getHighestDataByCountry(deathCasesDataset, target);
-            System.out.println("Lowest Death - " + lowestDeath);
-            System.out.println("Highest Death - " + highestDeath);
-            Integer lowestRecovered = StatisticReportUtils.getLowestDataByCountry(recoveredCasesDataset, target);
-            Integer highestRecovered = StatisticReportUtils.getHighestDataByCountry(recoveredCasesDataset, target);
-            System.out.println("Lowest Recovered - " + lowestRecovered);
-            System.out.println("Highest Recovered - " + highestRecovered);
-        } else {
-            System.out.println("result is null");
-        }
     }
 
     private static void initProgram() {
         dashboardPage = new PageDashboard();
         statisticPage = new PageStatistic();
+        prologPage = new PageProlog();
         loadDefaultDatasets();
-    }
-
-    public static void stopProgram() {
-
     }
 
     private static void loadDefaultDatasets() {
         try {
             getDashboardPage().getDatasetComboBox().setEnabled(false);
+            getDashboardPage().getPrologActionButton().setEnabled(false);
             getDashboardPage().getActionButton().setEnabled(false);
             getDashboardPage().getActionButton().setText("Loading Data...");
-            String confirmedCasesFile = "datasets\\time_series_covid19_confirmed_global.csv";
-            String deathCasesFile = "datasets\\time_series_covid19_deaths_global.csv";
-            String recoveredCasesFile = "datasets\\time_series_covid19_recovered_global.csv";
+            String confirmedCasesFile = "datasets/time_series_covid19_confirmed_global.csv";
+            String deathCasesFile = "datasets/time_series_covid19_deaths_global.csv";
+            String recoveredCasesFile = "datasets/time_series_covid19_recovered_global.csv";
 
             addLogMessage("Loading default datasets...");
             confirmedCasesDataset = FileUtils.readCSVFile(confirmedCasesFile);
@@ -110,11 +67,13 @@ public class APLCAssignment {
             recoveredCasesDataset = FileUtils.readCSVFile(recoveredCasesFile);
             addLogMessage("Default datasets is loaded.");
             getDashboardPage().getDatasetComboBox().setEnabled(true);
+            getDashboardPage().getPrologActionButton().setEnabled(true);
             getDashboardPage().getActionButton().setEnabled(true);
             getDashboardPage().getActionButton().setText("Go to Statistic Page");
         } catch (Exception e) {
             addErrorLogMessage("An error is occurred while loading default datasets.");
             getDashboardPage().getDatasetComboBox().setEnabled(true);
+            getDashboardPage().getPrologActionButton().setEnabled(true);
             getDashboardPage().getActionButton().setEnabled(true);
             getDashboardPage().getActionButton().setText("Error");
             DialogUtils.showErrorMessageDialog(null, "An error is occurred while\nloading the default datasets!");
@@ -123,41 +82,44 @@ public class APLCAssignment {
     }
 
     public static void loadDatasetFromOnline() {
-        try {
-            getDashboardPage().getDatasetComboBox().setEnabled(false);
-            getDashboardPage().getActionButton().setEnabled(false);
-            getDashboardPage().getActionButton().setText("Loading Data...");
-            APLCAssignment.addLogMessage("Loading datasets from online source...");
-            APLCAssignment.addLogMessage("Establishing internet connection...");
+        getDashboardPage().getDatasetComboBox().setEnabled(false);
+        getDashboardPage().getPrologActionButton().setEnabled(false);
+        getDashboardPage().getActionButton().setEnabled(false);
+        getDashboardPage().getActionButton().setText("Loading Data...");
+        APLCAssignment.addLogMessage("Loading datasets from online source...");
 
-            String confirmedCasesFileUrl = "https://data.humdata.org/hxlproxy/api/data-preview.csv?url=https%3A%2F%2Fraw.githubusercontent.com%2FCSSEGISandData%2FCOVID-19%2Fmaster%2Fcsse_covid_19_data%2Fcsse_covid_19_time_series%2Ftime_series_covid19_confirmed_global.csv&filename=time_series_covid19_confirmed_global.csv";
-            String deathCasesFileUrl = "https://data.humdata.org/hxlproxy/api/data-preview.csv?url=https%3A%2F%2Fraw.githubusercontent.com%2FCSSEGISandData%2FCOVID-19%2Fmaster%2Fcsse_covid_19_data%2Fcsse_covid_19_time_series%2Ftime_series_covid19_deaths_global.csv&filename=time_series_covid19_deaths_global.csv";
-            String recoveredCasesFileUrl = "https://data.humdata.org/hxlproxy/api/data-preview.csv?url=https%3A%2F%2Fraw.githubusercontent.com%2FCSSEGISandData%2FCOVID-19%2Fmaster%2Fcsse_covid_19_data%2Fcsse_covid_19_time_series%2Ftime_series_covid19_recovered_global.csv&filename=time_series_covid19_recovered_global.csv";
+        String confirmedCasesFileUrl = "https://data.humdata.org/hxlproxy/api/data-preview.csv?url=https%3A%2F%2Fraw.githubusercontent.com%2FCSSEGISandData%2FCOVID-19%2Fmaster%2Fcsse_covid_19_data%2Fcsse_covid_19_time_series%2Ftime_series_covid19_confirmed_global.csv&filename=time_series_covid19_confirmed_global.csv";
+        String deathCasesFileUrl = "https://data.humdata.org/hxlproxy/api/data-preview.csv?url=https%3A%2F%2Fraw.githubusercontent.com%2FCSSEGISandData%2FCOVID-19%2Fmaster%2Fcsse_covid_19_data%2Fcsse_covid_19_time_series%2Ftime_series_covid19_deaths_global.csv&filename=time_series_covid19_deaths_global.csv";
+        String recoveredCasesFileUrl = "https://data.humdata.org/hxlproxy/api/data-preview.csv?url=https%3A%2F%2Fraw.githubusercontent.com%2FCSSEGISandData%2FCOVID-19%2Fmaster%2Fcsse_covid_19_data%2Fcsse_covid_19_time_series%2Ftime_series_covid19_recovered_global.csv&filename=time_series_covid19_recovered_global.csv";
 
-            Thread t = new Thread(new Runnable() {
-                @Override
-                public void run() {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    APLCAssignment.addLogMessage("Establishing network connection...");
                     confirmedCasesDatasetOnline = FileUtils.readCSVFileFromUrl(confirmedCasesFileUrl);
                     deathCasesDatasetOnline = FileUtils.readCSVFileFromUrl(deathCasesFileUrl);
                     recoveredCasesDatasetOnline = FileUtils.readCSVFileFromUrl(recoveredCasesFileUrl);
-                    
+
                     addLogMessage("Datasets from online source is loaded.");
                     onlineDatasetLoaded = true;
                     getDashboardPage().getDatasetComboBox().setEnabled(true);
+                    getDashboardPage().getPrologActionButton().setEnabled(true);
                     getDashboardPage().getActionButton().setEnabled(true);
                     getDashboardPage().getActionButton().setText("Go to Statistic Page");
-                }
-            });
-            t.start();
-        } catch (Exception e) {
-            addErrorLogMessage("An error is occurred while loading the datasets from online source.");
-            getDashboardPage().getDatasetComboBox().setEnabled(true);
-            getDashboardPage().getActionButton().setEnabled(true);
-            getDashboardPage().getActionButton().setText("Error");
-            DialogUtils.showErrorMessageDialog(null, "An error is occurred while\nloading the datasets from online source!");
-            e.printStackTrace();
-        }
 
+                } catch (Exception e) {
+                    addErrorLogMessage("An error is occurred while loading the datasets from online source.");
+                    getDashboardPage().getDatasetComboBox().setEnabled(true);
+                    getDashboardPage().getPrologActionButton().setEnabled(true);
+                    getDashboardPage().getActionButton().setEnabled(true);
+                    getDashboardPage().getActionButton().setText("Error");
+                    DialogUtils.showErrorMessageDialog(null, "An error is occurred while\nloading the datasets from online source!");
+                    e.printStackTrace();
+                }
+            }
+        });
+        t.start();
     }
 
     public static PageDashboard getDashboardPage() {
@@ -166,6 +128,10 @@ public class APLCAssignment {
 
     public static PageStatistic getStatisticPage() {
         return statisticPage;
+    }
+
+    public static PageProlog getPrologPage() {
+        return prologPage;
     }
 
     public static List<Country> getSelectedConfirmedCasesDataset() {

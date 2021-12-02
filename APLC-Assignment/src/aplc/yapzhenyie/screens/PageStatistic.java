@@ -13,25 +13,27 @@ import aplc.yapzhenyie.utils.DialogUtils;
 import aplc.yapzhenyie.utils.StatisticReportUtils;
 import aplc.yapzhenyie.utils.constants.ConstantMessage;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -39,6 +41,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -54,42 +58,46 @@ import org.jfree.data.category.DefaultCategoryDataset;
  */
 public class PageStatistic extends JFrame implements ActionListener, IPage {
 
-    private JLabel labelSelectedDatasetText;
-    private JLabel labelReportDateText;
-    private JComboBox<String> comboBoxReportType;
+    private final JLabel labelSelectedDatasetText;
+    private final JLabel labelReportDateText;
+    private final JComboBox<String> comboBoxReportType;
 
-    private JButton buttonGoBack;
+    private final JButton buttonGoBack;
+    private final JButton buttonCancel;
 
     // Search Box
-    private JTextField fieldSearchBox;
-    private JButton buttonSearch;
-    private JList<String> listSearchResult;
-    private JScrollPane scrollPaneSearchResult;
+    private final JTextField fieldSearchBox;
+    private final JButton buttonSearch;
+    private final JList<String> listSearchResult;
+    private final JScrollPane scrollPaneSearchResult;
 
     // Chart
-    private JPanel containerChart;
-    private ChartPanel chartPanel;
+    private final JPanel containerChart;
+    private final ChartPanel chartPanel;
 
     // Table 1
-    private JPanel containerTable1Header;
-    private JLabel labelTable1Header;
-    private JPanel containerTable1;
-    private JScrollPane scrollPaneTable1;
-    private JTable table1;
+    private final JPanel containerTable1Header;
+    private final JLabel labelTable1Header;
+    private final JPanel containerTable1;
+    private final JScrollPane scrollPaneTable1;
+    private final JTable table1;
 
     // Table 2
-    private JPanel containerTable2Header;
-    private JLabel labelTable2Header;
-    private JPanel containerTable2;
-    private JScrollPane scrollPaneTable2;
-    private JTable table2;
+    private final JPanel containerTable2Header;
+    private final JLabel labelTable2Header;
+    private final JPanel containerTable2;
+    private final JScrollPane scrollPaneTable2;
+    private final JTable table2;
+
+    // Main Content Container
+    private final JScrollPane scrollPaneContainer;
 
     private List<Country> searchResults = new ArrayList<>();
-    private Country selectedCountry = null;
 
     public PageStatistic() {
         super.setSize(1024, 580);
         super.setMinimumSize(new Dimension(1024, 580));
+        super.setResizable(false);
 
         /**
          * Following source code reference from (Jack, 2010) Source:
@@ -98,7 +106,7 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         super.setLocation(dim.width / 2 - this.getSize().width / 2, dim.height / 2 - this.getSize().height / 2);
         super.setTitle(ConstantMessage.ApplicationName);
-        super.setIconImage(new ImageIcon("resources/APU-Logo.png").getImage());
+        super.setIconImage(new ImageIcon(getClass().getResource("/resources/APU-Logo.png")).getImage());
         super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JLabel header = new JLabel();
@@ -139,13 +147,20 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
         comboBoxReportType.setBounds(110, 89, 300, 25);
         comboBoxReportType.setFont(new java.awt.Font("Times New Roman", 0, 14));
         comboBoxReportType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Total Confirmed Cases",
-            "Weekly and Monthly Confirmed Cases", "Highest/Lowest Death and Recovered Cases"}));
+            "Weekly and Monthly Confirmed Cases", "Highest/Lowest Death and Recovered Cases", "Highest Daily Covid-19 Confirmed Cases"}));
         comboBoxReportType.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
                 comboBoxReportTypeItemStateChanged(evt);
             }
         });
         super.getContentPane().add(comboBoxReportType);
+
+        buttonCancel = new JButton();
+        buttonCancel.setBounds(470, 86, 90, 30);
+        buttonCancel.setText("Cancel");
+        buttonCancel.setFont(new Font("Times New Roman", 1, 14));
+        buttonCancel.addActionListener(this);
+        super.getContentPane().add(buttonCancel);
 
         JLabel labelReportDate = new JLabel();
         labelReportDate.setBounds(400, 60, 80, 22);
@@ -311,13 +326,31 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
             containerTable2.add(scrollPaneTable2);
         }
 
-        JScrollPane scrollPaneContainer = new JScrollPane();
+        scrollPaneContainer = new JScrollPane();
         scrollPaneContainer.setBounds(10, 130, 999, 412);
         scrollPaneContainer.setViewportView(container);
         scrollPaneContainer.setAutoscrolls(true);
         scrollPaneContainer.getVerticalScrollBar().setUnitIncrement(16);
         scrollPaneContainer.setBorder(BorderFactory.createEmptyBorder());
         super.getContentPane().add(scrollPaneContainer);
+
+        super.setGlassPane(new JComponent() {
+            protected void paintComponent(Graphics g) {
+                g.setColor(super.getBackground());
+                g.fillRect(0, 130, super.getWidth(), 412);
+            }
+        });
+        Container glassPane = (Container) super.getGlassPane();
+        glassPane.setLayout(null);
+        glassPane.addMouseListener(new MouseAdapter() {
+        });
+
+        JLabel labelLoading = new JLabel();
+        labelLoading.setFont(new java.awt.Font("Times New Roman", 0, 18));
+        labelLoading.setForeground(new java.awt.Color(0, 0, 0));
+        labelLoading.setBounds(470, 295, 150, 25);
+        labelLoading.setText("Loading...");
+        glassPane.add(labelLoading);
 
         super.getContentPane().setLayout(null);
         super.setVisible(false);
@@ -333,6 +366,8 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
         if (event.getSource() == this.buttonGoBack) {
             setPageVisible(false);
             APLCAssignment.getDashboardPage().setPageVisible(true);
+        } else if (event.getSource() == this.buttonCancel) {
+            updateComponents();
         }
     }
 
@@ -347,10 +382,13 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
             }
         }
         comboBoxReportType.setSelectedIndex(0);
+        comboBoxReportType.setEnabled(true);
+        buttonCancel.setVisible(false);
         fieldSearchBox.setText("Country");
         fieldSearchBox.setForeground(Color.GRAY);
         listSearchResult.setModel(new DefaultListModel<>());
         scrollPaneSearchResult.setVisible(false);
+        scrollPaneTable1.setBorder(UIManager.getLookAndFeel().getDefaults().getBorder("TextField.border"));
 
         // Default selection
         updateSelectedReportType();
@@ -435,6 +473,8 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
                 table1.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
                 scrollPaneTable1.setPreferredSize(new Dimension(550, 250));
+                scrollPaneTable1.getVerticalScrollBar().setValue(0);
+                scrollPaneTable1.getHorizontalScrollBar().setValue(0);
                 containerChart.setVisible(true);
                 containerTable2Header.setVisible(false);
                 containerTable2.setVisible(false);
@@ -525,6 +565,8 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
                 table1.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
                 scrollPaneTable1.setPreferredSize(new Dimension(960, 325));
+                scrollPaneTable1.getVerticalScrollBar().setValue(0);
+                scrollPaneTable1.getHorizontalScrollBar().setValue(0);
 
                 // Monthly Data table
                 List<String> formattedMonthlyDate = StatisticReportUtils.getFormattedMonthlyDate(dataset);
@@ -594,6 +636,8 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
                 table2.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
                 containerTable2.setVisible(true);
                 scrollPaneTable2.setPreferredSize(new Dimension(960, 325));
+                scrollPaneTable2.getVerticalScrollBar().setValue(0);
+                scrollPaneTable2.getHorizontalScrollBar().setValue(0);
                 break;
             }
             case 2: {
@@ -603,7 +647,6 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
 
                 List<Country> datasetDeath = APLCAssignment.getSelectedDeathCasesDataset();
                 List<Country> datasetRecovered = APLCAssignment.getSelectedRecoveredCasesDataset();
-                int datasetSize = Math.max(datasetDeath.size(), datasetRecovered.size());
                 List<Country> countryList = StatisticReportUtils.getDistinctCountries(datasetDeath.size() > datasetRecovered.size() ? datasetDeath : datasetRecovered);
                 Country cour = countryList.stream().findAny().orElse(null);
                 labelReportDateText.setText(DateTimeHelper.convertDateAsString(cour.getDataset().get(cour.getDataset().size() - 1).getDate()));
@@ -629,7 +672,7 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
                 }
 
                 containerTable1Header.setVisible(true);
-                labelTable1Header.setText("Highest/Lowest Death and Recovered Covid-19 Cases by Country");
+                labelTable1Header.setText("Highest/Lowest Daily Death and Recovered Covid-19 Cases by Country");
 
                 DefaultTableModel model = new DefaultTableModel(table1Data, table1Columns) {
                     @Override
@@ -679,21 +722,271 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
                 table1.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
                 scrollPaneTable1.setPreferredSize(new Dimension(960, 325));
+                scrollPaneTable1.getVerticalScrollBar().setValue(0);
+                scrollPaneTable1.getHorizontalScrollBar().setValue(0);
+                break;
+            }
+            case 3: {
+                containerChart.setVisible(false);
+                containerTable2Header.setVisible(false);
+                containerTable2.setVisible(false);
+
+                List<Country> datasetConfirmed = APLCAssignment.getSelectedConfirmedCasesDataset();
+                List<Country> countryList = StatisticReportUtils.getDistinctCountries(datasetConfirmed);
+                Country cour = countryList.stream().findAny().orElse(null);
+                labelReportDateText.setText(DateTimeHelper.convertDateAsString(cour.getDataset().get(cour.getDataset().size() - 1).getDate()));
+
+                String[] table1Columns = new String[3];
+                table1Columns[0] = "No.";
+                table1Columns[1] = "Country";
+                table1Columns[2] = "Highest Confirmed Cases";
+
+                String[][] table1Data = new String[countryList.size()][3];
+
+                for (int i = 0; i < countryList.size(); i++) {
+                    Country country = countryList.get(i);
+                    table1Data[i][0] = String.valueOf(i + 1 + ".");
+                    table1Data[i][1] = country.getCountryName();
+                    table1Data[i][2] = String.valueOf(Math.max(StatisticReportUtils.getHighestDataByCountry(datasetConfirmed, country.getCountryName()), 0));
+                }
+
+                containerTable1Header.setVisible(true);
+                labelTable1Header.setText("Highest Daily Covid-19 Confirmed Cases by Country");
+
+                DefaultTableModel model = new DefaultTableModel(table1Data, table1Columns) {
+                    @Override
+                    public Class getColumnClass(int column) {
+                        switch (column) {
+                            case 0:
+                                return String.class;
+                            case 1:
+                                return String.class;
+                            default:
+                                return Integer.class;
+                        }
+                    }
+
+                    @Override
+                    public boolean isCellEditable(int row, int column) {
+                        return false;
+                    }
+                };
+                table1.setModel(model);
+                TableRowSorter trs = new TableRowSorter(model);
+
+                class IntComparator implements Comparator {
+
+                    public int compare(Object o1, Object o2) {
+                        Integer int1 = Integer.parseInt(o1.toString());
+                        Integer int2 = Integer.parseInt(o2.toString());
+                        return int1.compareTo(int2);
+                    }
+
+                    public boolean equals(Object o2) {
+                        return this.equals(o2);
+                    }
+                }
+                table1.setRowSorter(trs);
+                table1.getColumnModel().getColumn(0).setPreferredWidth(50);
+                table1.getColumnModel().getColumn(1).setPreferredWidth(300);
+                DefaultTableCellRenderer centerrenderer = new DefaultTableCellRenderer();
+                centerrenderer.setHorizontalAlignment(JLabel.CENTER);
+                table1.getColumnModel().getColumn(0).setCellRenderer(centerrenderer);
+
+                trs.setComparator(2, new IntComparator());
+                table1.getColumnModel().getColumn(2).setPreferredWidth(220);
+                table1.getColumnModel().getColumn(2).setCellRenderer(centerrenderer);
+
+                table1.setAutoCreateRowSorter(false);
+                table1.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
+                scrollPaneTable1.setPreferredSize(new Dimension(592, 325));
+                scrollPaneTable1.getVerticalScrollBar().setValue(0);
+                scrollPaneTable1.getHorizontalScrollBar().setValue(0);
                 break;
             }
         }
+        scrollPaneContainer.getVerticalScrollBar().setValue(0);
+    }
+
+    private void setPerCountryInformation(int index) {
+        Country country = searchResults.get(index);
+        if (country == null) {
+            DialogUtils.showErrorMessageDialog(null, "An error occurred while doing this process.");
+            return;
+        }
+        fieldSearchBox.setText("Country");
+        fieldSearchBox.setForeground(Color.GRAY);
+        setSelectedCountryInformation(country);
+    }
+
+    private void setSelectedCountryInformation(Country country) {
+        if (country == null) {
+            return;
+        }
+        comboBoxReportType.setEnabled(false);
+        scrollPaneSearchResult.setVisible(false);
+        buttonCancel.setVisible(true);
+
+        containerChart.setVisible(false);
+        containerTable1Header.setVisible(true);
+        labelTable1Header.setText("Covid-19 Statistics (" + country.getCountryName() + ")");
+
+        List<Country> datasetConfirmed = APLCAssignment.getSelectedConfirmedCasesDataset();
+        List<Country> datasetDeath = APLCAssignment.getSelectedDeathCasesDataset();
+        List<Country> datasetRecovered = APLCAssignment.getSelectedRecoveredCasesDataset();
+        labelReportDateText.setText(DateTimeHelper.convertDateAsString(country.getDataset().get(country.getDataset().size() - 1).getDate()));
+
+        String[] table1Columns = new String[2];
+        table1Columns[0] = "Statistic";
+        table1Columns[1] = "Cases";
+
+        String[][] table1Data = new String[9][2];
+
+        table1Data[0][0] = "Total Confirmed Cases";
+        table1Data[1][0] = "Total Death Cases";
+        table1Data[2][0] = "Total Recovered Cases";
+        table1Data[3][0] = "Lowest Confirmed Cases (Per day)";
+        table1Data[4][0] = "Highest Confirmed Cases (Per day)";
+        table1Data[5][0] = "Lowest Death Cases (Per day)";
+        table1Data[6][0] = "Highest Death Cases (Per day)";
+        table1Data[7][0] = "Lowest Recovered Cases (Per day)";
+        table1Data[8][0] = "Highest Recovered Cases (Per day)";
+
+        table1Data[0][1] = String.valueOf(StatisticReportUtils.getTotalConfirmedCasesByCountry(datasetConfirmed, country.getCountryName()));
+        table1Data[1][1] = String.valueOf(StatisticReportUtils.getTotalConfirmedCasesByCountry(datasetDeath, country.getCountryName()));
+        table1Data[2][1] = String.valueOf(StatisticReportUtils.getTotalConfirmedCasesByCountry(datasetRecovered, country.getCountryName()));
+        table1Data[3][1] = String.valueOf(Math.max(StatisticReportUtils.getLowestDataByCountry(datasetConfirmed, country.getCountryName()), 0));
+        table1Data[4][1] = String.valueOf(Math.max(StatisticReportUtils.getHighestDataByCountry(datasetConfirmed, country.getCountryName()), 0));
+        table1Data[5][1] = String.valueOf(Math.max(StatisticReportUtils.getLowestDataByCountry(datasetDeath, country.getCountryName()), 0));
+        table1Data[6][1] = String.valueOf(Math.max(StatisticReportUtils.getHighestDataByCountry(datasetDeath, country.getCountryName()), 0));
+        table1Data[7][1] = String.valueOf(Math.max(StatisticReportUtils.getLowestDataByCountry(datasetRecovered, country.getCountryName()), 0));
+        table1Data[8][1] = String.valueOf(Math.max(StatisticReportUtils.getHighestDataByCountry(datasetRecovered, country.getCountryName()), 0));
+
+        DefaultTableModel model = new DefaultTableModel(table1Data, table1Columns) {
+            @Override
+            public Class getColumnClass(int column) {
+                switch (column) {
+                    case 0:
+                        return String.class;
+                    default:
+                        return Integer.class;
+                }
+            }
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        table1.setModel(model);
+        TableRowSorter trs = new TableRowSorter(model);
+
+        class IntComparator implements Comparator {
+
+            public int compare(Object o1, Object o2) {
+                Integer int1 = Integer.parseInt(o1.toString());
+                Integer int2 = Integer.parseInt(o2.toString());
+                return int1.compareTo(int2);
+            }
+
+            public boolean equals(Object o2) {
+                return this.equals(o2);
+            }
+        }
+        table1.setRowSorter(trs);
+        table1.getColumnModel().getColumn(0).setPreferredWidth(250);
+        table1.getColumnModel().getColumn(1).setPreferredWidth(200);
+        DefaultTableCellRenderer centerrenderer = new DefaultTableCellRenderer();
+        centerrenderer.setHorizontalAlignment(JLabel.CENTER);
+        table1.getColumnModel().getColumn(1).setCellRenderer(centerrenderer);
+
+        trs.setComparator(1, new IntComparator());
+
+        table1.setAutoCreateRowSorter(false);
+
+        scrollPaneTable1.setPreferredSize(new Dimension(460, 300));
+        scrollPaneTable1.getVerticalScrollBar().setValue(0);
+        scrollPaneTable1.getHorizontalScrollBar().setValue(0);
+        scrollPaneTable1.setBorder(BorderFactory.createEmptyBorder());
+
+        // Table 2
+        containerTable2Header.setVisible(true);
+        labelTable2Header.setText("Covid-19 Weekly and Monthly Confirmed Cases (" + country.getCountryName() + ")");
+
+        // Weekly Data table
+        List<String> formattedWeeklyDate = StatisticReportUtils.getFormattedWeeklyDate(datasetConfirmed);
+        // Monthly Data table
+        List<String> formattedMonthlyDate = StatisticReportUtils.getFormattedMonthlyDate(datasetConfirmed);
+
+        String[] table2Columns = new String[2];
+        table2Columns[0] = "Date";
+        table2Columns[1] = "Covid-19 Confirmed Cases";
+
+        String[][] table2Data = new String[formattedWeeklyDate.size() + formattedMonthlyDate.size()][2];
+        for (int j = 0; j < formattedWeeklyDate.size(); j++) {
+            String weeklyDate = formattedWeeklyDate.get(j);
+            table2Data[j][0] = StatisticReportUtils.getFormattedWeeklyStartDate(datasetConfirmed, weeklyDate)
+                    + " - " + StatisticReportUtils.getFormattedWeeklyEndDate(datasetConfirmed, weeklyDate);
+            table2Data[j][1] = StatisticReportUtils.getWeeklyConfirmedCasesByCountry(datasetConfirmed, country.getCountryName(), weeklyDate).toString();
+        }
+
+        for (int j = formattedWeeklyDate.size(); j < (formattedWeeklyDate.size() + formattedMonthlyDate.size()); j++) {
+            String monthlyDate = formattedMonthlyDate.get(j - formattedWeeklyDate.size());
+            try {
+                table2Data[j][0] = DateTimeHelper.convertDateToMonthFormat(monthlyDate);
+            } catch (ParseException ex) {
+                ex.printStackTrace();
+            }
+            table2Data[j][1] = StatisticReportUtils.getMonthlyConfirmedCasesByCountry(datasetConfirmed, country.getCountryName(), monthlyDate).toString();
+        }
+
+        DefaultTableModel model2 = new DefaultTableModel(table2Data, table2Columns) {
+            @Override
+            public Class getColumnClass(int column) {
+                switch (column) {
+                    case 0:
+                        return String.class;
+                    default:
+                        return Integer.class;
+                }
+            }
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        table2.setModel(model2);
+
+        TableRowSorter trs2 = new TableRowSorter(model2);
+        table2.setRowSorter(trs2);
+        table2.getColumnModel().getColumn(0).setPreferredWidth(250);
+        table2.getColumnModel().getColumn(1).setPreferredWidth(200);
+        DefaultTableCellRenderer centerrenderer2 = new DefaultTableCellRenderer();
+        centerrenderer2.setHorizontalAlignment(JLabel.CENTER);
+        table2.getColumnModel().getColumn(0).setCellRenderer(centerrenderer2);
+        table2.getColumnModel().getColumn(1).setCellRenderer(centerrenderer2);
+        trs2.setComparator(1, new IntComparator());
+
+        table2.setAutoCreateRowSorter(false);
+
+        containerTable2.setVisible(true);
+        scrollPaneTable2.setPreferredSize(new Dimension(470, 325));
+        scrollPaneTable2.getVerticalScrollBar().setValue(0);
+        scrollPaneTable2.getHorizontalScrollBar().setValue(0);
     }
 
     private void comboBoxReportTypeItemStateChanged(java.awt.event.ItemEvent evt) {
         // State == Selected
         if (evt.getStateChange() == 1) {
-            Thread t = new Thread() {
-                @Override
+            getGlassPane().setVisible(true);
+            SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     updateSelectedReportType();
+                    getGlassPane().setVisible(false);
                 }
-            };
-            t.start();
+            });
         }
     }
 
@@ -770,7 +1063,7 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
             if (searchResults.size() == 0) {
                 DialogUtils.showErrorMessageDialog(null, "An error occurred while doing this process.");
             }
-            //updateUserInformation(listSearchResult.getSelectedIndex());
+            setPerCountryInformation(listSearchResult.getSelectedIndex());
         }
     }
 
@@ -781,7 +1074,7 @@ public class PageStatistic extends JFrame implements ActionListener, IPage {
             if (event.getSource() == buttonSearch) {
                 searchByCountryName(true);
                 if (searchResults.size() == 1) {
-//                    updateUserInformation(0);
+                    setPerCountryInformation(0);
                 }
             }
         }

@@ -28,13 +28,15 @@ import javax.swing.text.DefaultCaret;
  */
 public class PageDashboard extends JFrame implements ActionListener, IPage {
 
-    private JTextArea loggingArea;
-    private JComboBox<String> comboBoxDataset;
-    private JButton buttonAction;
+    private final JTextArea loggingArea;
+    private final JComboBox<String> comboBoxDataset;
+    private final JButton buttonAction;
+    private final JButton buttonPrologAction;
 
     public PageDashboard() {
         super.setSize(1024, 580);
         super.setMinimumSize(new Dimension(1024, 580));
+        super.setResizable(false);
 
         /**
          * Following source code reference from (Jack, 2010) Source:
@@ -43,7 +45,7 @@ public class PageDashboard extends JFrame implements ActionListener, IPage {
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         super.setLocation(dim.width / 2 - this.getSize().width / 2, dim.height / 2 - this.getSize().height / 2);
         super.setTitle(ConstantMessage.ApplicationName);
-        super.setIconImage(new ImageIcon("resources/APU-Logo.png").getImage());
+        super.setIconImage(new ImageIcon(getClass().getResource("/resources/APU-Logo.png")).getImage());
         super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JLabel header = new JLabel();
@@ -92,7 +94,15 @@ public class PageDashboard extends JFrame implements ActionListener, IPage {
         buttonAction.setText("Go to Statistic Page");
         buttonAction.setFont(new Font("Times New Roman", 1, 18));
         buttonAction.addActionListener(this);
+        buttonAction.requestFocus();
         super.getContentPane().add(buttonAction);
+
+        buttonPrologAction = new JButton();
+        buttonPrologAction.setBounds(790, 110, 120, 35);
+        buttonPrologAction.setText("Prolog Page");
+        buttonPrologAction.setFont(new Font("Times New Roman", 1, 15));
+        buttonPrologAction.addActionListener(this);
+        super.getContentPane().add(buttonPrologAction);
 
         JLabel labellogs = new JLabel();
         labellogs.setBounds(100, 305, 100, 30);
@@ -135,16 +145,22 @@ public class PageDashboard extends JFrame implements ActionListener, IPage {
         return buttonAction;
     }
 
+    public JButton getPrologActionButton() {
+        return buttonPrologAction;
+    }
+
     private void comboBoxDatasetItemStateChanged(java.awt.event.ItemEvent evt) {
         // State == Selected
         if (evt.getStateChange() == 1) {
             if (evt.getItem().equals("Default Datasets")) {
                 APLCAssignment.setUsingDefaultDataset(true);
+                getPrologActionButton().setEnabled(true);
                 this.buttonAction.setText("Go to Statistic Page");
             } else if (evt.getItem().equals("Datasets from Online")) {
                 APLCAssignment.setUsingDefaultDataset(false);
                 if (!APLCAssignment.isOnlineDatasetLoaded()) {
                     this.buttonAction.setText("Load Datasets");
+                    getPrologActionButton().setEnabled(false);
                 } else {
                     this.buttonAction.setText("Go to Statistic Page");
                 }
@@ -155,7 +171,6 @@ public class PageDashboard extends JFrame implements ActionListener, IPage {
     @Override
     public void actionPerformed(ActionEvent event) {
         if (event.getSource() == this.buttonAction) {
-            JButton btn = (JButton) event.getSource();
             if (APLCAssignment.isUsingDefaultDataset()) {
                 setPageVisible(false);
                 APLCAssignment.getStatisticPage().setPageVisible(true);
@@ -169,6 +184,10 @@ public class PageDashboard extends JFrame implements ActionListener, IPage {
                     APLCAssignment.getStatisticPage().updateComponents();
                 }
             }
+        } else if (event.getSource() == this.buttonPrologAction) {
+            setPageVisible(false);
+            APLCAssignment.getPrologPage().setPageVisible(true);
+            APLCAssignment.getPrologPage().updateComponents();
         }
     }
 }
