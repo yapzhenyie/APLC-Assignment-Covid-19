@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package aplc.yapzhenyie.utils;
 
 import aplc.yapzhenyie.APLCAssignment;
@@ -23,8 +18,8 @@ import java.util.stream.Collectors;
  */
 public class StatisticReportUtils {
 
-    private static BiPredicate<String, String> containsCountryName = (inputParam, reference) -> inputParam.toLowerCase().contains(reference.toLowerCase());
-    private static BiPredicate<String, String> equalsCountryName = (inputParam, reference) -> inputParam.toLowerCase().equals(reference.toLowerCase());
+    private static final BiPredicate<String, String> containsCountryName = (inputParam, reference) -> inputParam.toLowerCase().contains(reference.toLowerCase());
+    private static final BiPredicate<String, String> equalsCountryName = (inputParam, reference) -> inputParam.toLowerCase().equals(reference.toLowerCase());
 
     public static List<Country> getDistinctCountries(List<Country> dataset) {
         return dataset.stream()
